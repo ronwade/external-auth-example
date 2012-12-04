@@ -51,6 +51,67 @@ $app->get('/api/user', function (\Symfony\Component\HttpFoundation\Request $requ
     return $app->json($user);
 });
 
+
+
+$app->match('/oauth/authorize', function(\Symfony\Component\HttpFoundation\Request $request) use ($app, $db){
+
+    if($request->isMethod("POST"))
+    {
+        //validate the user
+        if(!$user = $db->users->findOne(array('username'=>$request->request->get('username'), 'password'=>$request->request->get('password'))))
+        {
+            return "Invalid Login";
+        }
+
+
+        if($redirect_uri = $request->query->get('redirect_uri'))
+        {
+            $auth_code = sha1(uniqid());
+            $db->auth_codes->save(array('code'=>$auth_code, 'user_id' => $user['_id']));
+
+            if(parse_url($redirect_uri, PHP_URL_QUERY))
+            {
+                $redirect_uri .= '&';
+            }
+            else
+            {
+                $redirect_uri .= '?';
+            }
+
+            $redirect_uri .= 'code=' . urldecode($auth_code);
+            $redirect_uri .= '&state=' . urlencode($request->query->get('state'));
+
+            return $app->redirect($redirect_uri);
+        }
+
+        return "Welcome " . $user['firstname'];
+
+    }
+
+$html = <<< HTML
+<html>
+    <head>
+        <title>Login</title>
+    </head>
+    <body>
+        <p>Please login below</p>
+        <form method="POST">
+            <label>Username</label>
+            <input type="text" name="username" />
+            <label>Password</label>
+            <input type="password" name="password" />
+            <input type="submit" value="Login" />
+        </form>
+    </body>
+</html>
+HTML;
+
+    return $html;
+
+})
+->method("GET|POST");
+
+
 $app->error(function(\Exception $e, $code) use ($app) {
     return $app->json(array('error' => $e->getMessage()), $code);
 });
