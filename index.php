@@ -23,7 +23,8 @@ $app->get('/api/user', function (\Symfony\Component\HttpFoundation\Request $requ
 
     $user = null;
 
-    print_r($request->headers->all());die();
+
+    print_r(getallheaders());die();
 
     //if an access token was presented, attempt to authenticate with that
     //this could have been from the SSO workflow with MemberFuse
