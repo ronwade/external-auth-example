@@ -2,8 +2,13 @@
 echo "Testing Mongo Connection...";
 
 # get the mongo db name out of the env
-$mongo_url = parse_url(getenv("MONGOHQ_URL"));
-$dbname = str_replace("/", "", $mongo_url["path"]);
+if(!$mongo_url = getenv("MONGOHQ_URL"))
+{
+    //default to a local dev database
+    $mongo_url = 'mongodb://localhost/xfuse';
+}
+$mongo_url_parts = parse_url($mongo_url);
+$dbname = str_replace("/", "", $mongo_url_parts["path"]);
 
 # connect
-$m   = new Mongo(getenv("MONGOHQ_URL"));
+$m   = new Mongo($mongo_url);
