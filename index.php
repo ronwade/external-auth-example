@@ -19,16 +19,34 @@ require_once __DIR__.'/vendor/autoload.php';
 $app = new Silex\Application();
 $app['mongo'] = $mongo;
 
-$app->match('/api/user', function (\Symfony\Component\HttpFoundation\Request $request) use ($app, $db) {
+$app->get('/api/user', function (\Symfony\Component\HttpFoundation\Request $request) use ($app, $db) {
 
-    if(!$user = $db->users->findOne(array('username' => $request->getUser(), 'password' => $request->getPassword())))
+    $user = null;
+
+    //if an access token was presented, attempt to authenticate with that
+    //this could have been from the SSO workflow with MemberFuse
+    if($request->headers->has('authorization'))
     {
-        $app->abort(401, 'Authentication Failed');
+        $auth = explode(' ',$request->headers->get('authorization'));
+        if($auth[0] == 'Bearer')
+        {
+            $token = $auth[1];
+            $token = $db->tokens->findOne(array('token' => $token));
+            $user = $db->users->findOne(array('_id' => $token['user_id']));
+        }
+    }
+
+    //if above didn't produce a user try with user credentials from the basic auth
+    if(!$user)
+    {
+        if(!$user = $db->users->findOne(array('username' => $request->getUser(), 'password' => $request->getPassword())))
+        {
+            $app->abort(401, 'Authentication Failed');
+        }
     }
 
     //add the id fields MemberFuse is looking for
     $user['external_id'] = (string)$user['_id'];
-    $user['verb'] = $request->getMethod();
 
     return $app->json($user);
 });
