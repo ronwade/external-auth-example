@@ -19,7 +19,7 @@ require_once __DIR__.'/vendor/autoload.php';
 $app = new Silex\Application();
 $app['mongo'] = $mongo;
 
-$app->get('/api/user', function (\Symfony\Component\HttpFoundation\Request $request) use ($app, $db) {
+$app->match('/api/user', function (\Symfony\Component\HttpFoundation\Request $request) use ($app, $db) {
 
     if(!$user = $db->users->findOne(array('username' => $request->getUser(), 'password' => $request->getPassword())))
     {
@@ -28,6 +28,7 @@ $app->get('/api/user', function (\Symfony\Component\HttpFoundation\Request $requ
 
     //add the id fields MemberFuse is looking for
     $user['external_id'] = (string)$user['_id'];
+    $user['verb'] = $request->getMethod();
 
     return $app->json($user);
 });
