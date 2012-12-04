@@ -41,6 +41,10 @@ $app->get('/api/user', function (\Symfony\Component\HttpFoundation\Request $requ
                 $app->abort(401, 'unauthorized_token');
             }
         }
+        else
+        {
+            $app->abort(400, 'invalid authorization type. must be Bearer ' . $auth[0] . ' given');
+        }
     }
 
     //if above didn't produce a user try with user credentials from the basic auth
