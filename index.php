@@ -112,6 +112,32 @@ HTML;
 ->method("GET|POST");
 
 
+$app->post('/oauth/token', function(\Symfony\Component\HttpFoundation\Request $request) use ($app, $db){
+    if(!$code = $request->request->get('code'))
+    {
+        $app->abort(400, 'invalid_request');
+    }
+
+    if(!$code = $db->auth_codes->findOne(array('code'=>$code)))
+    {
+        return $app->abort(400, 'invalid_grant');
+    }
+
+    $user = $db->users->findOne(array('_id' => $code['user_id']));
+
+    $token = sha1(uniqid());
+
+    $db->tokens->save(array('token'=>$token, 'user_id'=>$user['_id']));
+
+    header('Content-Type: application/json');
+    return $app->json(array(
+        'access_token' => $token,
+        'token_type' => 'example',
+    ),200);
+
+});
+
+
 $app->error(function(\Exception $e, $code) use ($app) {
     return $app->json(array('error' => $e->getMessage()), $code);
 });
