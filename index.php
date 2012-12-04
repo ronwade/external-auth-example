@@ -31,8 +31,15 @@ $app->get('/api/user', function (\Symfony\Component\HttpFoundation\Request $requ
         if($auth[0] == 'Bearer')
         {
             $token = $auth[1];
-            $token = $db->tokens->findOne(array('token' => $token));
-            $user = $db->users->findOne(array('_id' => $token['user_id']));
+            if(!$token = $db->tokens->findOne(array('token' => $token)))
+            {
+                $app->abort(401, 'invalid_token');
+            }
+
+            if(!$user = $db->users->findOne(array('_id' => $token['user_id'])))
+            {
+                $app->abort(401, 'unauthorized_token');
+            }
         }
     }
 
@@ -41,7 +48,7 @@ $app->get('/api/user', function (\Symfony\Component\HttpFoundation\Request $requ
     {
         if(!$user = $db->users->findOne(array('username' => $request->getUser(), 'password' => $request->getPassword())))
         {
-            $app->abort(401, 'Authentication Failed');
+            $app->abort(401, 'user credentials authentication failed');
         }
     }
 
